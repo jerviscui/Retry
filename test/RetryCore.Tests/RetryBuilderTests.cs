@@ -1,4 +1,5 @@
 using Retry;
+using Retry.Exceptions;
 using Shouldly;
 
 namespace RetryCore.Tests
@@ -72,6 +73,200 @@ namespace RetryCore.Tests
 
             r.IsSuccess.ShouldBeTrue();
             r.Result.ShouldBe(value);
+        }
+
+        [Fact]
+        public void TryFunction_OverMaxTryTimeException_Test()
+        {
+            var r = RetryBuilder.Default.ConfigureOptions(options =>
+            {
+                options.MaxTryCount = int.MaxValue;
+                options.MaxTryTime = TimeSpan.FromSeconds(1);
+            }).Build(() =>
+            {
+                throw new Exception();
+                return 1;
+            }).Run();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<OverMaxTryTimeException>();
+        }
+
+        [Fact]
+        public async Task TryAsyncFunction_OverMaxTryTimeException_Test()
+        {
+            var r = await RetryBuilder.Default.ConfigureOptions(options =>
+            {
+                options.MaxTryCount = int.MaxValue;
+                options.MaxTryTime = TimeSpan.FromSeconds(1);
+            }).Build(() =>
+            {
+                throw new Exception();
+                return Task.Run(() => 1);
+            }).RunAsync();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<OverMaxTryTimeException>();
+        }
+
+        [Fact]
+        public void TryFunction_OverMaxTryCountException_Test()
+        {
+            int count = 0;
+            var r = RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .Build(() =>
+                {
+                    throw new Exception();
+                    return 1;
+                })
+                .OnFailure((result, i) => count = i)
+                .Run();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<OverMaxTryCountException>();
+            ((OverMaxTryCountException)r.Exception).TriedCount.ShouldBe(count);
+        }
+
+        [Fact]
+        public async Task TryAsyncFunction_OverMaxTryCountException_Test()
+        {
+            int count = 0;
+            var r = await RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                }).Build(() =>
+                {
+                    throw new Exception();
+                    return Task.Run(() => 1);
+                })
+                .OnFailure((result, i) => count = i)
+                .RunAsync();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<OverMaxTryCountException>();
+            ((OverMaxTryCountException)r.Exception).TriedCount.ShouldBe(count);
+        }
+
+        [Fact]
+        public void TryFunction_RetryCallbackException_Test()
+        {
+            var r = RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .RetryOnException<TimeoutException>()
+                .Build(() =>
+                {
+                    throw new TimeoutException();
+                    return 1;
+                })
+                .OnRetry(result => throw new Exception())
+                .Run();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<RetryCallbackException>();
+            r.Exception.InnerException.ShouldBeOfType<Exception>();
+        }
+
+        [Fact]
+        public async Task TryAsyncFunction_RetryCallbackException_Test()
+        {
+            var r = await RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .RetryOnException<TimeoutException>()
+                .Build(() =>
+                {
+                    throw new TimeoutException();
+                    return Task.Run(() => 1);
+                })
+                .OnRetryAsync(result => throw new Exception())
+                .RunAsync();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<RetryCallbackException>();
+            r.Exception.InnerException.ShouldBeOfType<Exception>();
+        }
+
+        [Fact]
+        public void TryFunction_FailureCallbackException_Test()
+        {
+            var r = RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .RetryOnException<TimeoutException>()
+                .Build(() =>
+                {
+                    throw new TimeoutException();
+                    return 1;
+                })
+                .OnFailure(result => throw new Exception())
+                .Run();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<FailureCallbackException>();
+            r.Exception.InnerException.ShouldBeOfType<Exception>();
+        }
+
+        [Fact]
+        public async Task TryAsyncFunction_FailureCallbackException_Test()
+        {
+            var r = await RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .RetryOnException<TimeoutException>()
+                .Build(() =>
+                {
+                    throw new TimeoutException();
+                    return Task.Run(() => 1);
+                })
+                .OnFailureAsync(result => throw new Exception())
+                .RunAsync();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<FailureCallbackException>();
+            r.Exception.InnerException.ShouldBeOfType<Exception>();
+        }
+
+        [Fact]
+        public void TryFunction_SuccessCallbackException_Test()
+        {
+            var r = RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .Build(() => 1)
+                .OnSuccess(result => throw new Exception())
+                .Run();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<SuccessCallbackException>();
+            r.Exception.InnerException.ShouldBeOfType<Exception>();
+        }
+
+        [Fact]
+        public async Task TryAsyncFunction_SuccessCallbackException_Test()
+        {
+            var r = await RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .Build(() =>
+                {
+                    return Task.Run(() => 1);
+                })
+                .OnSuccessAsync(result => throw new Exception())
+                .RunAsync();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<SuccessCallbackException>();
+            r.Exception.InnerException.ShouldBeOfType<Exception>();
         }
     }
 }

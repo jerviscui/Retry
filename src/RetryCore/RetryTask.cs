@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -196,12 +196,12 @@ internal class RetryTask<T> : IRetriable<T>
             {
                 try
                 {
+                    Retry(result, triedCount);
+
                     if (_retryOptions.TryInterval.Ticks > 0)
                     {
                         Thread.Sleep(_retryOptions.TryInterval);
                     }
-
-                    Retry(result, triedCount);
                 }
                 catch (TaskCanceledException ex)
                 {
@@ -268,7 +268,7 @@ internal class RetryTask<T> : IRetriable<T>
         }
 
         // or exception is not retry exceptions.
-        if (_retryExceptions.Any() && _retryExceptions.All(o => o.IsInstanceOfType(exception)))
+        if (_retryExceptions.Any() && _retryExceptions.All(o => !o.IsInstanceOfType(exception)))
         {
             return false;
         }

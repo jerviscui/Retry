@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -271,12 +271,12 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
             {
                 try
                 {
+                    await Retry(result, triedCount);
+
                     if (_retryOptions.TryInterval.Ticks > 0)
                     {
                         await Task.Delay(_retryOptions.TryInterval, _cancellationToken);
                     }
-
-                    await Retry(result, triedCount);
                 }
                 catch (TaskCanceledException ex)
                 {
@@ -343,7 +343,7 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
         }
 
         // or exception is not retry exceptions.
-        if (_retryExceptions.Any() && _retryExceptions.All(o => o.IsInstanceOfType(exception)))
+        if (_retryExceptions.Any() && _retryExceptions.All(o => !o.IsInstanceOfType(exception)))
         {
             return false;
         }
