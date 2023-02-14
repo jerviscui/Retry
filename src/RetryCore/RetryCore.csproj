@@ -7,7 +7,32 @@
 		<AssemblyName>RetryCore</AssemblyName>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<LangVersion>latest</LangVersion>
+
+    <Version>0.1.0</Version>
+    <PackageId>$(AssemblyName)</PackageId>
+    <Description>A library for retrying operations.</Description>
+    <Authors>jerviscui</Authors>
+    <Company>$(Authors)</Company>
+    <Product>$(AssemblyName)</Product>
+    <Copyright>Copyright 2023 $(Authors)</Copyright>
+    <PackageIcon></PackageIcon>
+    <PackageProjectUrl>https://github.com/jerviscui/Retry</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/jerviscui/Retry/blob/main/LICENSE</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/jerviscui/Retry</RepositoryUrl>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <IsPackable>True</IsPackable>
+    
 	</PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
