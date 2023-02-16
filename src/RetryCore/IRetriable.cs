@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Retry;
 
@@ -67,6 +67,15 @@ public interface IRetriable
     /// <param name="failureAction">The action to take on failure.</param>
     /// <returns></returns>
     public IRetriable OnFailure(Action<RetryResult, int> failureAction);
+
+    /// <summary>
+    ///   Retries the task until the specified condition return true, 
+    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    ///   Then returns the value returned by the task.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <returns></returns>
+    public IRetriable Assert(Func<RetryResult, bool> condition);
 }
 
 public interface IRetriable<T>
@@ -134,4 +143,13 @@ public interface IRetriable<T>
     /// <param name="failureAction">The action to take on failure.</param>
     /// <returns></returns>
     public IRetriable<T> OnFailure(Action<RetryResult<T>, int> failureAction);
+
+    /// <summary>
+    ///   Retries the task until the specified condition return true, 
+    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    ///   Then returns the value returned by the task.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <returns></returns>
+    public IRetriable<T> Assert(Func<RetryResult<T>, bool> condition);
 }

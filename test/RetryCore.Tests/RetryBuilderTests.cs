@@ -268,5 +268,94 @@ namespace RetryCore.Tests
             r.Exception.ShouldBeOfType<SuccessCallbackException>();
             r.Exception.InnerException.ShouldBeOfType<Exception>();
         }
+
+        [Fact]
+        public void TryFunction_Assert_Test()
+        {
+            int? value = null;
+            int count = 0;
+
+            var r = RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .Build(() => value)
+                .OnRetry((result, i) => count = i)
+                .Assert(result =>
+                {
+                    var stop = result.Result != null;
+                    value = 1;
+
+                    return stop;
+                })
+                .Run();
+
+            count.ShouldBe(2);
+            r.IsSuccess.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task TryAsyncFunction_Assert_Sync_Test()
+        {
+            int? value = null;
+            int count = 0;
+
+            var r = await RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .Build(() => Task.FromResult(value))
+                .OnRetry((result, i) => count = i)
+                .Assert(result =>
+                {
+                    var stop = result.Result != null;
+                    value = 1;
+
+                    return stop;
+                })
+                .RunAsync();
+
+            count.ShouldBe(2);
+            r.IsSuccess.ShouldBeTrue();
+        }
+
+        [Fact]
+        public void TryFunction_AssertCallbackException_Test()
+        {
+            var r = RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .Build(() => 1)
+                .Assert(result => throw new Exception())
+                .Run();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<AssertCallbackException>();
+            r.Exception.InnerException.ShouldBeOfType<Exception>();
+        }
+
+        [Fact]
+        public async Task TryAsyncFunction_AssertCallbackException_Async_Test()
+        {
+            var r = await RetryBuilder.Default.ConfigureOptions(options =>
+                {
+                    options.MaxTryCount = 2;
+                })
+                .Build(() =>
+                {
+                    return Task.Run(() => 1);
+                })
+                .Assert(result =>
+                {
+                    throw new Exception();
+                    return Task.FromResult(true);
+                })
+                .RunAsync();
+
+            r.IsSuccess.ShouldBeFalse();
+            r.Exception.ShouldBeOfType<AssertCallbackException>();
+            r.Exception.InnerException.ShouldBeOfType<Exception>();
+        }
     }
 }

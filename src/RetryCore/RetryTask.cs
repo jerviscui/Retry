@@ -93,6 +93,14 @@ internal class RetryTask : IRetriable
 
         return this;
     }
+
+    /// <inheritdoc />
+    public IRetriable Assert(Func<RetryResult, bool> condition)
+    {
+        _retryTask = _retryTask.Assert(condition);
+
+        return this;
+    }
 }
 
 /// <summary>
@@ -123,6 +131,8 @@ internal class RetryTask<T> : IRetriable<T>
     private readonly List<Action<RetryResult<T>, int>> _successActions;
 
     private readonly List<Action<RetryResult<T>, int>> _failureActions;
+
+    private Func<RetryResult<T>, bool>? _condition;
 
     /// <inheritdoc />
     public IAsyncRetriable<T> AsAsync()
@@ -174,6 +184,14 @@ internal class RetryTask<T> : IRetriable<T>
     public IRetriable<T> OnFailure(Action<RetryResult<T>, int> failureAction)
     {
         _failureActions.Add(failureAction);
+
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IRetriable<T> Assert(Func<RetryResult<T>, bool> condition)
+    {
+        _condition = condition;
 
         return this;
     }
@@ -232,6 +250,20 @@ internal class RetryTask<T> : IRetriable<T>
                 break;
             }
 
+            //assert
+            try
+            {
+                if (AssertThenRetry(result))
+                {
+                    continue;
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Exception = new AssertCallbackException(ex);
+                break;
+            }
+
             //onsuccess
             try
             {
@@ -274,6 +306,13 @@ internal class RetryTask<T> : IRetriable<T>
         }
 
         return true;
+    }
+
+    private bool AssertThenRetry(RetryResult<T> result)
+    {
+        var stop = _condition?.Invoke(result) ?? true;
+
+        return !stop;
     }
 
     private bool ShouldContinue(RetryResult<T> result, TimeSpan triedTime, int triedCount)

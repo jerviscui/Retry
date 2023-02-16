@@ -125,6 +125,22 @@ internal class AsyncRetryTask : IAsyncRetriable
 
         return this;
     }
+
+    /// <inheritdoc />
+    public IAsyncRetriable Assert(Func<RetryResult, bool> condition)
+    {
+        _retryTask = _retryTask.Assert(condition);
+
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IAsyncRetriable Assert(Func<RetryResult, Task<bool>> condition)
+    {
+        _retryTask = _retryTask.Assert(condition);
+
+        return this;
+    }
 }
 
 /// <summary>
@@ -155,6 +171,10 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
     private readonly List<Delegate> _successActions;
 
     private readonly List<Delegate> _failureActions;
+
+    private Func<RetryResult<T>, bool>? _condition;
+
+    private Func<RetryResult<T>, Task<bool>>? _conditionTask;
 
     private CancellationToken _cancellationToken;
 
@@ -253,6 +273,24 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
         return this;
     }
 
+    /// <inheritdoc />
+    public IAsyncRetriable<T> Assert(Func<RetryResult<T>, bool> condition)
+    {
+        _condition = condition;
+        _conditionTask = null;
+
+        return this;
+    }
+
+    /// <inheritdoc />
+    public IAsyncRetriable<T> Assert(Func<RetryResult<T>, Task<bool>> condition)
+    {
+        _conditionTask = condition;
+        _condition = null;
+
+        return this;
+    }
+
     private async Task<RetryResult<T>> TryImplAsync()
     {
         //TraceSource.TraceVerbose("Starting trying with max try time {0} and max try count {1}.",
@@ -307,6 +345,20 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
                 break;
             }
 
+            //assert
+            try
+            {
+                if (await AssertThenRetry(result))
+                {
+                    continue;
+                }
+            }
+            catch (Exception ex)
+            {
+                result.Exception = new AssertCallbackException(ex);
+                break;
+            }
+
             //onsuccess
             try
             {
@@ -349,6 +401,17 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
         }
 
         return true;
+    }
+
+    private async Task<bool> AssertThenRetry(RetryResult<T> result)
+    {
+        var stop = _condition?.Invoke(result) ?? true;
+        if (_conditionTask is not null)
+        {
+            stop = await _conditionTask(result);
+        }
+
+        return !stop;
     }
 
     private bool ShouldContinue(RetryResult<T> result, TimeSpan triedTime, int triedCount)

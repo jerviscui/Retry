@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -33,40 +33,40 @@ public class RetryBuilder
     /// Builds this instance.
     /// </summary>
     /// <returns></returns>
-    public IRetriable Build(Action tryTask)
+    public IRetriable Build(Action @try)
     {
-        return new RetryTask(tryTask, GetOptions(), GetRetryExceptions());
+        return new RetryTask(@try, GetOptions(), GetRetryExceptions());
     }
 
     /// <summary>
     /// Builds the specified try task.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    /// <param name="tryTask">The try task.</param>
+    /// <param name="try">The try task.</param>
     /// <returns></returns>
-    public IRetriable<T> Build<T>(Func<T> tryTask)
+    public IRetriable<T> Build<T>(Func<T> @try)
     {
-        return new RetryTask<T>(tryTask, GetOptions(), GetRetryExceptions());
+        return new RetryTask<T>(@try, GetOptions(), GetRetryExceptions());
     }
 
     /// <summary>
     /// Builds this instance.
     /// </summary>
     /// <returns></returns>
-    public IAsyncRetriable Build(Func<Task> tryTask)
+    public IAsyncRetriable Build(Func<Task> @try)
     {
-        return new AsyncRetryTask(tryTask, GetOptions(), GetRetryExceptions());
+        return new AsyncRetryTask(@try, GetOptions(), GetRetryExceptions());
     }
 
     /// <summary>
     /// Builds the specified try task.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    /// <param name="tryTask">The try task.</param>
+    /// <param name="try">The try task.</param>
     /// <returns></returns>
-    public IAsyncRetriable<T> Build<T>(Func<Task<T>> tryTask)
+    public IAsyncRetriable<T> Build<T>(Func<Task<T>> @try)
     {
-        return new AsyncRetryTask<T>(tryTask, GetOptions(), GetRetryExceptions());
+        return new AsyncRetryTask<T>(@try, GetOptions(), GetRetryExceptions());
     }
 
     private Type[] GetRetryExceptions()

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -121,6 +121,24 @@ public interface IAsyncRetriable
     /// <param name="failureAction">The action to take on failure.</param>
     /// <returns></returns>
     public IAsyncRetriable OnFailureAsync(Func<RetryResult, int, Task> failureAction);
+
+    /// <summary>
+    ///   Retries the task until the specified condition return true, 
+    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    ///   Then returns the value returned by the task.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <returns></returns>
+    public IAsyncRetriable Assert(Func<RetryResult, bool> condition);
+
+    /// <summary>
+    ///   Retries the task until the specified condition return true, 
+    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    ///   Then returns the value returned by the task.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <returns></returns>
+    public IAsyncRetriable Assert(Func<RetryResult, Task<bool>> condition);
 }
 
 public interface IAsyncRetriable<T>
@@ -247,5 +265,21 @@ public interface IAsyncRetriable<T>
     /// <returns></returns>
     public IAsyncRetriable<T> OnFailureAsync(Func<RetryResult<T>, int, Task> failureAction);
 
-    //public void RetryWhenResult();
+    /// <summary>
+    ///   Retries the task until the specified condition return true, 
+    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    ///   Then returns the value returned by the task.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <returns></returns>
+    public IAsyncRetriable<T> Assert(Func<RetryResult<T>, bool> condition);
+
+    /// <summary>
+    ///   Retries the task until the specified condition return true, 
+    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    ///   Then returns the value returned by the task.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <returns></returns>
+    public IAsyncRetriable<T> Assert(Func<RetryResult<T>, Task<bool>> condition);
 }
