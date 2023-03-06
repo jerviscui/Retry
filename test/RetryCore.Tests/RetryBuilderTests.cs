@@ -122,7 +122,7 @@ namespace RetryCore.Tests
                     throw new Exception();
                     return 1;
                 })
-                .OnFailure((result, i) => count = i)
+                .OnFailure((result, i) => count = i.TriedCount)
                 .Run();
 
             r.IsSuccess.ShouldBeFalse();
@@ -142,7 +142,7 @@ namespace RetryCore.Tests
                     throw new Exception();
                     return Task.Run(() => 1);
                 })
-                .OnFailure((result, i) => count = i)
+                .OnFailure((result, i) => count = i.TriedCount)
                 .RunAsync();
 
             r.IsSuccess.ShouldBeFalse();
@@ -280,7 +280,7 @@ namespace RetryCore.Tests
                     options.MaxTryCount = 2;
                 })
                 .Build(() => value)
-                .OnRetry((result, i) => count = i)
+                .OnRetry((result, i) => count = i.RetryCount)
                 .Run(result =>
                 {
                     var stop = result.Result != null;
@@ -304,7 +304,7 @@ namespace RetryCore.Tests
                     options.MaxTryCount = 2;
                 })
                 .Build(() => Task.FromResult(value))
-                .OnRetry((result, i) => count = i)
+                .OnRetry((result, i) => count = i.RetryCount)
                 .RunAsync(result =>
                 {
                     var stop = result.Result != null;

@@ -54,7 +54,7 @@ internal class AsyncRetryTask : IAsyncRetriable
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable OnRetry(Action<RetryResult, int> retryAction)
+    public IAsyncRetriable OnRetry(Action<RetryResult, RetryContext> retryAction)
     {
         _retryTask = _retryTask.OnRetry(retryAction);
 
@@ -70,7 +70,7 @@ internal class AsyncRetryTask : IAsyncRetriable
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable OnRetryAsync(Func<RetryResult, int, Task> retryAction)
+    public IAsyncRetriable OnRetryAsync(Func<RetryResult, RetryContext, Task> retryAction)
     {
         _retryTask = _retryTask.OnRetryAsync(retryAction);
 
@@ -86,7 +86,7 @@ internal class AsyncRetryTask : IAsyncRetriable
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable OnSuccess(Action<RetryResult, int> successAction)
+    public IAsyncRetriable OnSuccess(Action<RetryResult, RetryContext> successAction)
     {
         _retryTask = _retryTask.OnSuccess(successAction);
 
@@ -102,7 +102,7 @@ internal class AsyncRetryTask : IAsyncRetriable
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable OnSuccessAsync(Func<RetryResult, int, Task> successAction)
+    public IAsyncRetriable OnSuccessAsync(Func<RetryResult, RetryContext, Task> successAction)
     {
         _retryTask = _retryTask.OnSuccessAsync(successAction);
 
@@ -118,7 +118,7 @@ internal class AsyncRetryTask : IAsyncRetriable
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable OnFailure(Action<RetryResult, int> failureAction)
+    public IAsyncRetriable OnFailure(Action<RetryResult, RetryContext> failureAction)
     {
         _retryTask = _retryTask.OnFailure(failureAction);
 
@@ -134,28 +134,12 @@ internal class AsyncRetryTask : IAsyncRetriable
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable OnFailureAsync(Func<RetryResult, int, Task> failureAction)
+    public IAsyncRetriable OnFailureAsync(Func<RetryResult, RetryContext, Task> failureAction)
     {
         _retryTask = _retryTask.OnFailureAsync(failureAction);
 
         return this;
     }
-
-    ///// <inheritdoc />
-    //public IAsyncRetriable Assert(Func<RetryResult, bool> condition)
-    //{
-    //    _retryTask = _retryTask.Assert(condition);
-
-    //    return this;
-    //}
-
-    ///// <inheritdoc />
-    //public IAsyncRetriable Assert(Func<RetryResult, Task<bool>> condition)
-    //{
-    //    _retryTask = _retryTask.Assert(condition);
-
-    //    return this;
-    //}
 }
 
 /// <summary>
@@ -229,7 +213,7 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable<T> OnRetry(Action<RetryResult<T>, int> retryAction)
+    public IAsyncRetriable<T> OnRetry(Action<RetryResult<T>, RetryContext> retryAction)
     {
         _retryActions.Add(retryAction);
 
@@ -243,7 +227,7 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable<T> OnRetryAsync(Func<RetryResult<T>, int, Task> retryAction)
+    public IAsyncRetriable<T> OnRetryAsync(Func<RetryResult<T>, RetryContext, Task> retryAction)
     {
         _retryActions.Add(retryAction);
 
@@ -257,7 +241,7 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable<T> OnSuccess(Action<RetryResult<T>, int> successAction)
+    public IAsyncRetriable<T> OnSuccess(Action<RetryResult<T>, RetryContext> successAction)
     {
         _successActions.Add(successAction);
 
@@ -271,7 +255,7 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable<T> OnSuccessAsync(Func<RetryResult<T>, int, Task> successAction)
+    public IAsyncRetriable<T> OnSuccessAsync(Func<RetryResult<T>, RetryContext, Task> successAction)
     {
         _successActions.Add(successAction);
 
@@ -285,7 +269,7 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable<T> OnFailure(Action<RetryResult<T>, int> failureAction)
+    public IAsyncRetriable<T> OnFailure(Action<RetryResult<T>, RetryContext> failureAction)
     {
         _failureActions.Add(failureAction);
 
@@ -299,51 +283,34 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
     }
 
     /// <inheritdoc />
-    public IAsyncRetriable<T> OnFailureAsync(Func<RetryResult<T>, int, Task> failureAction)
+    public IAsyncRetriable<T> OnFailureAsync(Func<RetryResult<T>, RetryContext, Task> failureAction)
     {
         _failureActions.Add(failureAction);
 
         return this;
     }
 
-    ///// <inheritdoc />
-    //public IAsyncRetriable<T> Assert(Func<RetryResult<T>, bool> condition)
-    //{
-    //    _condition = condition;
-    //    _conditionTask = null;
-
-    //    return this;
-    //}
-
-    ///// <inheritdoc />
-    //public IAsyncRetriable<T> Assert(Func<RetryResult<T>, Task<bool>> condition)
-    //{
-    //    _conditionTask = condition;
-    //    _condition = null;
-
-    //    return this;
-    //}
-
     private async Task<RetryResult<T>> TryImplAsync()
     {
         //TraceSource.TraceVerbose("Starting trying with max try time {0} and max try count {1}.",
         //    MaxTryTime, MaxTryCount);
-        int triedCount = 0;
         var sw = Stopwatch.StartNew();
+        var context = new RetryContext(0, 0, sw.Elapsed);
 
         // Start the try loop.
         var result = new RetryResult<T>();
         do
         {
-            triedCount++;
+            context.TriedCount++;
             //TraceSource.TraceVerbose("Trying time {0}, elapsed time {1}.", TriedCount, Stopwatch.Elapsed);
 
-            if (triedCount > 1)
+            if (context.TriedCount > 1)
             {
                 //on retry
                 try
                 {
-                    await Retry(result, triedCount - 1);
+                    context.RetryCount = context.TriedCount - 1;
+                    await Retry(result, context);
 
                     var delay = _retryOptions.RetryInterval.GetInterval();
                     if (delay.Ticks > 0)
@@ -397,7 +364,7 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
             //on success
             try
             {
-                await Success(result, triedCount);
+                await Success(result, context);
             }
             catch (Exception ex)
             {
@@ -406,12 +373,12 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
             }
 
             return result;
-        } while (ShouldContinue(result, sw.Elapsed, triedCount));
+        } while (ShouldContinue(result, sw.Elapsed, context));
 
         //on failure
         try
         {
-            await Failure(result, triedCount);
+            await Failure(result, context);
         }
         catch (Exception ex)
         {
@@ -449,16 +416,18 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
         return !stop;
     }
 
-    private bool ShouldContinue(RetryResult<T> result, TimeSpan triedTime, int triedCount)
+    private bool ShouldContinue(RetryResult<T> result, TimeSpan triedTime, RetryContext context)
     {
-        if (triedTime >= _retryOptions.MaxTryTime)
+        context.TriedTime = triedTime;
+
+        if (context.TriedTime >= _retryOptions.MaxTryTime)
         {
-            result.Exception = new OverMaxTryTimeException(triedTime);
+            result.Exception = new OverMaxTryTimeException(context.TriedTime);
             return false;
         }
-        if (triedCount >= _retryOptions.MaxTryCount)
+        if (context.TriedCount >= _retryOptions.MaxTryCount)
         {
-            result.Exception = new OverMaxTryCountException(triedCount);
+            result.Exception = new OverMaxTryCountException(context.TriedCount);
             return false;
         }
 
@@ -471,32 +440,34 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
         return true;
     }
 
-    private Task Success(RetryResult<T> result, int triedCount)
+    private Task Success(RetryResult<T> result, RetryContext context)
     {
-        return InvokeActions(_successActions, result, triedCount);
+        return InvokeActions(_successActions, result, context);
     }
 
-    private Task Retry(RetryResult<T> result, int retryCount)
+    private Task Retry(RetryResult<T> result, RetryContext context)
     {
-        return InvokeActions(_retryActions, result, retryCount);
+        return InvokeActions(_retryActions, result, context);
     }
 
-    private Task Failure(RetryResult<T> result, int triedCount)
+    private Task Failure(RetryResult<T> result, RetryContext context)
     {
-        return InvokeActions(_failureActions, result, triedCount);
+        return InvokeActions(_failureActions, result, context);
     }
 
-    private static async Task InvokeActions(IEnumerable<Delegate> actions, RetryResult<T> result, int triedCount)
+    private static async Task InvokeActions(IEnumerable<Delegate> actions, RetryResult<T> result, RetryContext context)
     {
+        var clone = context.Clone();
+
         foreach (var action in actions)
         {
             switch (action)
             {
-                case Action<RetryResult<T>, int> sync:
-                    sync(result, triedCount);
+                case Action<RetryResult<T>, RetryContext> sync:
+                    sync(result, context);
                     break;
-                case Func<RetryResult<T>, int, Task> async:
-                    await async(result, triedCount);
+                case Func<RetryResult<T>, RetryContext, Task> async:
+                    await async(result, context);
                     break;
                 default:
                     throw new NotSupportedException();

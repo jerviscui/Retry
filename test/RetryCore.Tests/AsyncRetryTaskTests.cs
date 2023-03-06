@@ -17,7 +17,7 @@ namespace RetryCore.Tests
                 return Task.FromResult(1);
             }, new RetryOptions(), Array.Empty<Type>());
             task.OnRetry((_, _) => { retryTimes++; });
-            task.OnFailure((_, i) => { count = i; });
+            task.OnFailure((_, i) => { count = i.TriedCount; });
 
             var retry = await task.RunAsync(new CancellationTokenSource(0).Token);
 
@@ -44,7 +44,7 @@ namespace RetryCore.Tests
                 retryTimes++;
                 cts.Cancel();
             });
-            task.OnFailure((_, i) => { count = i; });
+            task.OnFailure((_, i) => { count = i.TriedCount; });
 
             var retry = await task.RunAsync(cts.Token);
 

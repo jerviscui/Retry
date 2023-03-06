@@ -59,7 +59,7 @@ public interface IAsyncRetriable
     /// </summary>
     /// <param name="retryAction">The action to take on retry.</param>
     /// <returns></returns>
-    public IAsyncRetriable OnRetry(Action<RetryResult, int> retryAction);
+    public IAsyncRetriable OnRetry(Action<RetryResult, RetryContext> retryAction);
 
     /// <summary>
     /// Configures the asynchronous action to take after each time the try action fails and before the next try. 
@@ -77,7 +77,7 @@ public interface IAsyncRetriable
     /// </summary>
     /// <param name="retryAction">The action to take on retry.</param>
     /// <returns></returns>
-    public IAsyncRetriable OnRetryAsync(Func<RetryResult, int, Task> retryAction);
+    public IAsyncRetriable OnRetryAsync(Func<RetryResult, RetryContext, Task> retryAction);
 
     /// <summary>
     /// Configures the action to take when the try action succeeds.
@@ -95,7 +95,7 @@ public interface IAsyncRetriable
     /// </summary>
     /// <param name="successAction">The action to take on success.</param>
     /// <returns></returns>
-    public IAsyncRetriable OnSuccess(Action<RetryResult, int> successAction);
+    public IAsyncRetriable OnSuccess(Action<RetryResult, RetryContext> successAction);
 
     /// <summary>
     /// Configures the asynchronous action to take when the try action succeeds.
@@ -113,7 +113,7 @@ public interface IAsyncRetriable
     /// </summary>
     /// <param name="successAction">The action to take on success.</param>
     /// <returns></returns>
-    public IAsyncRetriable OnSuccessAsync(Func<RetryResult, int, Task> successAction);
+    public IAsyncRetriable OnSuccessAsync(Func<RetryResult, RetryContext, Task> successAction);
 
     /// <summary>
     /// Configures the action to take when the try action execution failed. 
@@ -130,7 +130,7 @@ public interface IAsyncRetriable
     /// </summary>
     /// <param name="failureAction">The action to take on failure.</param>
     /// <returns></returns>
-    public IAsyncRetriable OnFailure(Action<RetryResult, int> failureAction);
+    public IAsyncRetriable OnFailure(Action<RetryResult, RetryContext> failureAction);
 
     /// <summary>
     /// Configures the action to take when the try action execution failed.
@@ -147,25 +147,7 @@ public interface IAsyncRetriable
     /// </summary>
     /// <param name="failureAction">The action to take on failure.</param>
     /// <returns></returns>
-    public IAsyncRetriable OnFailureAsync(Func<RetryResult, int, Task> failureAction);
-
-    ///// <summary>
-    /////   Retries the task until the specified condition return true, 
-    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    /////   Then returns the value returned by the task.
-    ///// </summary>
-    ///// <param name = "condition">The assert condition.</param>
-    ///// <returns></returns>
-    //public IAsyncRetriable Assert(Func<RetryResult, bool> condition);
-
-    ///// <summary>
-    /////   Retries the task until the specified condition return true, 
-    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    /////   Then returns the value returned by the task.
-    ///// </summary>
-    ///// <param name = "condition">The assert condition.</param>
-    ///// <returns></returns>
-    //public IAsyncRetriable Assert(Func<RetryResult, Task<bool>> condition);
+    public IAsyncRetriable OnFailureAsync(Func<RetryResult, RetryContext, Task> failureAction);
 }
 
 public interface IAsyncRetriable<T>
@@ -224,7 +206,7 @@ public interface IAsyncRetriable<T>
     /// </summary>
     /// <param name="retryAction">The action to take on retry.</param>
     /// <returns></returns>
-    public IAsyncRetriable<T> OnRetry(Action<RetryResult<T>, int> retryAction);
+    public IAsyncRetriable<T> OnRetry(Action<RetryResult<T>, RetryContext> retryAction);
 
     /// <summary>
     /// Configures the asynchronous action to take after each time the try action fails and before the next try. 
@@ -242,7 +224,7 @@ public interface IAsyncRetriable<T>
     /// </summary>
     /// <param name="retryAction">The action to take on retry.</param>
     /// <returns></returns>
-    public IAsyncRetriable<T> OnRetryAsync(Func<RetryResult<T>, int, Task> retryAction);
+    public IAsyncRetriable<T> OnRetryAsync(Func<RetryResult<T>, RetryContext, Task> retryAction);
 
     /// <summary>
     /// Configures the action to take when the try action succeeds.
@@ -260,7 +242,7 @@ public interface IAsyncRetriable<T>
     /// </summary>
     /// <param name="successAction">The action to take on success.</param>
     /// <returns></returns>
-    public IAsyncRetriable<T> OnSuccess(Action<RetryResult<T>, int> successAction);
+    public IAsyncRetriable<T> OnSuccess(Action<RetryResult<T>, RetryContext> successAction);
 
     /// <summary>
     /// Configures the asynchronous action to take when the try action succeeds.
@@ -278,7 +260,7 @@ public interface IAsyncRetriable<T>
     /// </summary>
     /// <param name="successAction">The action to take on success.</param>
     /// <returns></returns>
-    public IAsyncRetriable<T> OnSuccessAsync(Func<RetryResult<T>, int, Task> successAction);
+    public IAsyncRetriable<T> OnSuccessAsync(Func<RetryResult<T>, RetryContext, Task> successAction);
 
     /// <summary>
     /// Configures the action to take when the try action execution failed. 
@@ -295,7 +277,7 @@ public interface IAsyncRetriable<T>
     /// </summary>
     /// <param name="failureAction">The action to take on failure.</param>
     /// <returns></returns>
-    public IAsyncRetriable<T> OnFailure(Action<RetryResult<T>, int> failureAction);
+    public IAsyncRetriable<T> OnFailure(Action<RetryResult<T>, RetryContext> failureAction);
 
     /// <summary>
     /// Configures the action to take when the try action execution failed.
@@ -312,23 +294,5 @@ public interface IAsyncRetriable<T>
     /// </summary>
     /// <param name="failureAction">The action to take on failure.</param>
     /// <returns></returns>
-    public IAsyncRetriable<T> OnFailureAsync(Func<RetryResult<T>, int, Task> failureAction);
-
-    ///// <summary>
-    /////   Retries the task until the specified condition return true, 
-    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    /////   Then returns the value returned by the task.
-    ///// </summary>
-    ///// <param name = "condition">The assert condition.</param>
-    ///// <returns></returns>
-    //public IAsyncRetriable<T> Assert(Func<RetryResult<T>, bool> condition);
-
-    ///// <summary>
-    /////   Retries the task until the specified condition return true, 
-    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    /////   Then returns the value returned by the task.
-    ///// </summary>
-    ///// <param name = "condition">The assert condition.</param>
-    ///// <returns></returns>
-    //public IAsyncRetriable<T> Assert(Func<RetryResult<T>, Task<bool>> condition);
+    public IAsyncRetriable<T> OnFailureAsync(Func<RetryResult<T>, RetryContext, Task> failureAction);
 }

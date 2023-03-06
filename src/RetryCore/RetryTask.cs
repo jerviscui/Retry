@@ -61,7 +61,7 @@ internal class RetryTask : IRetriable
     }
 
     /// <inheritdoc />
-    IRetriable IRetriable.OnRetry(Action<RetryResult, int> retryAction)
+    IRetriable IRetriable.OnRetry(Action<RetryResult, RetryContext> retryAction)
     {
         _retryTask = _retryTask.OnRetry(retryAction);
 
@@ -77,7 +77,7 @@ internal class RetryTask : IRetriable
     }
 
     /// <inheritdoc />
-    IRetriable IRetriable.OnSuccess(Action<RetryResult, int> successAction)
+    IRetriable IRetriable.OnSuccess(Action<RetryResult, RetryContext> successAction)
     {
         _retryTask = _retryTask.OnSuccess(successAction);
 
@@ -93,20 +93,12 @@ internal class RetryTask : IRetriable
     }
 
     /// <inheritdoc />
-    IRetriable IRetriable.OnFailure(Action<RetryResult, int> failureAction)
+    IRetriable IRetriable.OnFailure(Action<RetryResult, RetryContext> failureAction)
     {
         _retryTask = _retryTask.OnFailure(failureAction);
 
         return this;
     }
-
-    ///// <inheritdoc />
-    //public IRetriable Assert(Func<RetryResult, bool> condition)
-    //{
-    //    _retryTask = _retryTask.Assert(condition);
-
-    //    return this;
-    //}
 }
 
 /// <summary>
@@ -115,15 +107,15 @@ internal class RetryTask : IRetriable
 /// <typeparam name="T">The type of result returned by the retried delegate.</typeparam>
 internal class RetryTask<T> : IRetriable<T>
 {
-    private readonly List<Action<RetryResult<T>, int>> _failureActions;
-
-    private readonly List<Action<RetryResult<T>, int>> _retryActions;
-
     private readonly Type[] _retryExceptions;
 
     private readonly RetryOptions _retryOptions;
 
-    private readonly List<Action<RetryResult<T>, int>> _successActions;
+    private readonly List<Action<RetryResult<T>, RetryContext>> _retryActions;
+
+    private readonly List<Action<RetryResult<T>, RetryContext>> _successActions;
+
+    private readonly List<Action<RetryResult<T>, RetryContext>> _failureActions;
 
     private readonly Func<T> _taskToTry;
 
@@ -135,9 +127,9 @@ internal class RetryTask<T> : IRetriable<T>
         _retryOptions = retryOptions;
         _retryExceptions = retryExceptions;
 
-        _retryActions = new List<Action<RetryResult<T>, int>>();
-        _successActions = new List<Action<RetryResult<T>, int>>();
-        _failureActions = new List<Action<RetryResult<T>, int>>();
+        _retryActions = new List<Action<RetryResult<T>, RetryContext>>();
+        _successActions = new List<Action<RetryResult<T>, RetryContext>>();
+        _failureActions = new List<Action<RetryResult<T>, RetryContext>>();
     }
 
     /// <inheritdoc />
@@ -167,7 +159,7 @@ internal class RetryTask<T> : IRetriable<T>
     }
 
     /// <inheritdoc />
-    public IRetriable<T> OnRetry(Action<RetryResult<T>, int> retryAction)
+    public IRetriable<T> OnRetry(Action<RetryResult<T>, RetryContext> retryAction)
     {
         _retryActions.Add(retryAction);
 
@@ -181,7 +173,7 @@ internal class RetryTask<T> : IRetriable<T>
     }
 
     /// <inheritdoc />
-    public IRetriable<T> OnSuccess(Action<RetryResult<T>, int> successAction)
+    public IRetriable<T> OnSuccess(Action<RetryResult<T>, RetryContext> successAction)
     {
         _successActions.Add(successAction);
 
@@ -195,41 +187,34 @@ internal class RetryTask<T> : IRetriable<T>
     }
 
     /// <inheritdoc />
-    public IRetriable<T> OnFailure(Action<RetryResult<T>, int> failureAction)
+    public IRetriable<T> OnFailure(Action<RetryResult<T>, RetryContext> failureAction)
     {
         _failureActions.Add(failureAction);
 
         return this;
     }
 
-    ///// <inheritdoc />
-    //public IRetriable<T> Assert(Func<RetryResult<T>, bool> condition)
-    //{
-    //    _condition = condition;
-
-    //    return this;
-    //}
-
     private RetryResult<T> TryImpl()
     {
         //TraceSource.TraceVerbose("Starting trying with max try time {0} and max try count {1}.",
         //    MaxTryTime, MaxTryCount);
-        int triedCount = 0;
         var sw = Stopwatch.StartNew();
         ManualResetEventSlim? resetEvent = null;
+        var context = new RetryContext(0, 0, sw.Elapsed);
 
         // Start the try loop.
         var result = new RetryResult<T>();
         do
         {
-            triedCount++;
+            context.TriedCount++;
             //TraceSource.TraceVerbose("Trying time {0}, elapsed time {1}.", TriedCount, Stopwatch.Elapsed);
 
-            if (triedCount > 1)
+            if (context.TriedCount > 1)
             {
                 try
                 {
-                    Retry(result, triedCount - 1);
+                    context.RetryCount = context.TriedCount - 1;
+                    Retry(result, context);
 
                     var delay = _retryOptions.RetryInterval.GetInterval();
                     if (delay.Ticks > 0)
@@ -284,7 +269,7 @@ internal class RetryTask<T> : IRetriable<T>
             //onsuccess
             try
             {
-                Success(result, triedCount);
+                Success(result, context);
             }
             catch (Exception ex)
             {
@@ -293,12 +278,12 @@ internal class RetryTask<T> : IRetriable<T>
             }
 
             goto Exit;
-        } while (ShouldContinue(result, sw.Elapsed, triedCount)); //onretry
+        } while (ShouldContinue(result, sw.Elapsed, context)); //onretry
 
         //failure
         try
         {
-            Failure(result, triedCount);
+            Failure(result, context);
         }
         catch (Exception ex)
         {
@@ -334,43 +319,47 @@ internal class RetryTask<T> : IRetriable<T>
         return !stop;
     }
 
-    private bool ShouldContinue(RetryResult<T> result, TimeSpan triedTime, int triedCount)
+    private bool ShouldContinue(RetryResult<T> result, TimeSpan triedTime, RetryContext context)
     {
-        if (triedTime >= _retryOptions.MaxTryTime)
+        context.TriedTime = triedTime;
+
+        if (context.TriedTime >= _retryOptions.MaxTryTime)
         {
-            result.Exception = new OverMaxTryTimeException(triedTime);
+            result.Exception = new OverMaxTryTimeException(context.TriedTime);
             return false;
         }
-        if (triedCount >= _retryOptions.MaxTryCount)
+        if (context.TriedCount >= _retryOptions.MaxTryCount)
         {
-            result.Exception = new OverMaxTryCountException(triedCount);
+            result.Exception = new OverMaxTryCountException(context.TriedCount);
             return false;
         }
 
         return true;
     }
 
-    private void Success(RetryResult<T> result, int triedCount)
+    private void Success(RetryResult<T> result, RetryContext context)
     {
-        InvokeActions(_successActions, result, triedCount);
+        InvokeActions(_successActions, result, context);
     }
 
-    private void Retry(RetryResult<T> result, int retryCount)
+    private void Retry(RetryResult<T> result, RetryContext context)
     {
-        InvokeActions(_retryActions, result, retryCount);
+        InvokeActions(_retryActions, result, context);
     }
 
-    private void Failure(RetryResult<T> result, int triedCount)
+    private void Failure(RetryResult<T> result, RetryContext context)
     {
-        InvokeActions(_failureActions, result, triedCount);
+        InvokeActions(_failureActions, result, context);
     }
 
-    private static void InvokeActions(IEnumerable<Action<RetryResult<T>, int>> actions, RetryResult<T> result,
-        int triedCount)
+    private static void InvokeActions(IEnumerable<Action<RetryResult<T>, RetryContext>> actions, RetryResult<T> result,
+        RetryContext context)
     {
+        var clone = context.Clone();
+
         foreach (var action in actions)
         {
-            action(result, triedCount);
+            action(result, clone);
         }
     }
 }
