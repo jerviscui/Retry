@@ -47,6 +47,12 @@ internal class RetryTask : IRetriable
     }
 
     /// <inheritdoc />
+    public RetryResult Run(Func<RetryResult, bool> condition)
+    {
+        return _retryTask.Run(condition);
+    }
+
+    /// <inheritdoc />
     IRetriable IRetriable.OnRetry(Action<RetryResult> retryAction)
     {
         _retryTask = _retryTask.OnRetry(retryAction);
@@ -94,13 +100,13 @@ internal class RetryTask : IRetriable
         return this;
     }
 
-    /// <inheritdoc />
-    public IRetriable Assert(Func<RetryResult, bool> condition)
-    {
-        _retryTask = _retryTask.Assert(condition);
+    ///// <inheritdoc />
+    //public IRetriable Assert(Func<RetryResult, bool> condition)
+    //{
+    //    _retryTask = _retryTask.Assert(condition);
 
-        return this;
-    }
+    //    return this;
+    //}
 }
 
 /// <summary>
@@ -147,6 +153,14 @@ internal class RetryTask<T> : IRetriable<T>
     }
 
     /// <inheritdoc />
+    public RetryResult<T> Run(Func<RetryResult<T>, bool> assert)
+    {
+        _condition = assert;
+
+        return Run();
+    }
+
+    /// <inheritdoc />
     public IRetriable<T> OnRetry(Action<RetryResult<T>> retryAction)
     {
         return OnRetry((result, _) => retryAction(result));
@@ -188,13 +202,13 @@ internal class RetryTask<T> : IRetriable<T>
         return this;
     }
 
-    /// <inheritdoc />
-    public IRetriable<T> Assert(Func<RetryResult<T>, bool> condition)
-    {
-        _condition = condition;
+    ///// <inheritdoc />
+    //public IRetriable<T> Assert(Func<RetryResult<T>, bool> condition)
+    //{
+    //    _condition = condition;
 
-        return this;
-    }
+    //    return this;
+    //}
 
     private RetryResult<T> TryImpl()
     {

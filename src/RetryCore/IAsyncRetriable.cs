@@ -18,6 +18,33 @@ public interface IAsyncRetriable
         bool continueOnCapturedContext = false);
 
     /// <summary>
+    /// Asynchronous execution try action.
+    /// Retries the task until the specified condition return true.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <param name="cancellationToken">A cancellation token that should be used to cancel the work</param>
+    /// <param name="continueOnCapturedContext">
+    /// true to attempt to marshal the continuation back to the original context captured; otherwise, false.
+    /// </param>
+    /// <returns></returns>
+    public Task<RetryResult> RunAsync(Func<RetryResult, bool> condition, CancellationToken cancellationToken = default,
+        bool continueOnCapturedContext = false);
+
+    /// <summary>
+    /// Asynchronous execution try action.
+    /// Retries the task until the specified condition return true.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <param name="cancellationToken">A cancellation token that should be used to cancel the work</param>
+    /// <param name="continueOnCapturedContext">
+    /// true to attempt to marshal the continuation back to the original context captured; otherwise, false.
+    /// </param>
+    /// <returns></returns>
+    public Task<RetryResult> RunAsync(Func<RetryResult, Task<bool>> condition,
+        CancellationToken cancellationToken = default,
+        bool continueOnCapturedContext = false);
+
+    /// <summary>
     /// Configures the action to take after each time the try action fails and before the next try. 
     /// The result of the failed try action will be passed as parameter to the action.
     /// </summary>
@@ -122,33 +149,27 @@ public interface IAsyncRetriable
     /// <returns></returns>
     public IAsyncRetriable OnFailureAsync(Func<RetryResult, int, Task> failureAction);
 
-    /// <summary>
-    ///   Retries the task until the specified condition return true, 
-    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    ///   Then returns the value returned by the task.
-    /// </summary>
-    /// <param name = "condition">The assert condition.</param>
-    /// <returns></returns>
-    public IAsyncRetriable Assert(Func<RetryResult, bool> condition);
+    ///// <summary>
+    /////   Retries the task until the specified condition return true, 
+    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    /////   Then returns the value returned by the task.
+    ///// </summary>
+    ///// <param name = "condition">The assert condition.</param>
+    ///// <returns></returns>
+    //public IAsyncRetriable Assert(Func<RetryResult, bool> condition);
 
-    /// <summary>
-    ///   Retries the task until the specified condition return true, 
-    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    ///   Then returns the value returned by the task.
-    /// </summary>
-    /// <param name = "condition">The assert condition.</param>
-    /// <returns></returns>
-    public IAsyncRetriable Assert(Func<RetryResult, Task<bool>> condition);
+    ///// <summary>
+    /////   Retries the task until the specified condition return true, 
+    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    /////   Then returns the value returned by the task.
+    ///// </summary>
+    ///// <param name = "condition">The assert condition.</param>
+    ///// <returns></returns>
+    //public IAsyncRetriable Assert(Func<RetryResult, Task<bool>> condition);
 }
 
 public interface IAsyncRetriable<T>
 {
-    ///// <summary>
-    ///// Synchronous execution try action.
-    ///// </summary>
-    ///// <returns></returns>
-    //public RetryResult<T> Run();
-
     /// <summary>
     /// Asynchronous execution try action.
     /// </summary>
@@ -158,6 +179,34 @@ public interface IAsyncRetriable<T>
     /// </param>
     /// <returns></returns>
     public Task<RetryResult<T>> RunAsync(CancellationToken cancellationToken = default,
+        bool continueOnCapturedContext = false);
+
+    /// <summary>
+    /// Asynchronous execution try action.
+    /// Retries the task until the specified condition return true.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <param name="cancellationToken">A cancellation token that should be used to cancel the work</param>
+    /// <param name="continueOnCapturedContext">
+    /// true to attempt to marshal the continuation back to the original context captured; otherwise, false.
+    /// </param>
+    /// <returns></returns>
+    public Task<RetryResult<T>> RunAsync(Func<RetryResult<T>, bool> condition,
+        CancellationToken cancellationToken = default,
+        bool continueOnCapturedContext = false);
+
+    /// <summary>
+    /// Asynchronous execution try action.
+    /// Retries the task until the specified condition return true.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <param name="cancellationToken">A cancellation token that should be used to cancel the work</param>
+    /// <param name="continueOnCapturedContext">
+    /// true to attempt to marshal the continuation back to the original context captured; otherwise, false.
+    /// </param>
+    /// <returns></returns>
+    public Task<RetryResult<T>> RunAsync(Func<RetryResult<T>, Task<bool>> condition,
+        CancellationToken cancellationToken = default,
         bool continueOnCapturedContext = false);
 
     /// <summary>
@@ -265,21 +314,21 @@ public interface IAsyncRetriable<T>
     /// <returns></returns>
     public IAsyncRetriable<T> OnFailureAsync(Func<RetryResult<T>, int, Task> failureAction);
 
-    /// <summary>
-    ///   Retries the task until the specified condition return true, 
-    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    ///   Then returns the value returned by the task.
-    /// </summary>
-    /// <param name = "condition">The assert condition.</param>
-    /// <returns></returns>
-    public IAsyncRetriable<T> Assert(Func<RetryResult<T>, bool> condition);
+    ///// <summary>
+    /////   Retries the task until the specified condition return true, 
+    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    /////   Then returns the value returned by the task.
+    ///// </summary>
+    ///// <param name = "condition">The assert condition.</param>
+    ///// <returns></returns>
+    //public IAsyncRetriable<T> Assert(Func<RetryResult<T>, bool> condition);
 
-    /// <summary>
-    ///   Retries the task until the specified condition return true, 
-    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    ///   Then returns the value returned by the task.
-    /// </summary>
-    /// <param name = "condition">The assert condition.</param>
-    /// <returns></returns>
-    public IAsyncRetriable<T> Assert(Func<RetryResult<T>, Task<bool>> condition);
+    ///// <summary>
+    /////   Retries the task until the specified condition return true, 
+    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    /////   Then returns the value returned by the task.
+    ///// </summary>
+    ///// <param name = "condition">The assert condition.</param>
+    ///// <returns></returns>
+    //public IAsyncRetriable<T> Assert(Func<RetryResult<T>, Task<bool>> condition);
 }

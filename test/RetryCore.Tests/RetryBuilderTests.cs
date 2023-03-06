@@ -281,14 +281,13 @@ namespace RetryCore.Tests
                 })
                 .Build(() => value)
                 .OnRetry((result, i) => count = i)
-                .Assert(result =>
+                .Run(result =>
                 {
                     var stop = result.Result != null;
                     value = 1;
 
                     return stop;
-                })
-                .Run();
+                });
 
             count.ShouldBe(2);
             r.IsSuccess.ShouldBeTrue();
@@ -306,14 +305,13 @@ namespace RetryCore.Tests
                 })
                 .Build(() => Task.FromResult(value))
                 .OnRetry((result, i) => count = i)
-                .Assert(result =>
+                .RunAsync(result =>
                 {
                     var stop = result.Result != null;
                     value = 1;
 
                     return stop;
-                })
-                .RunAsync();
+                });
 
             count.ShouldBe(2);
             r.IsSuccess.ShouldBeTrue();
@@ -327,8 +325,7 @@ namespace RetryCore.Tests
                     options.MaxTryCount = 2;
                 })
                 .Build(() => 1)
-                .Assert(result => throw new Exception())
-                .Run();
+                .Run(result => throw new Exception());
 
             r.IsSuccess.ShouldBeFalse();
             r.Exception.ShouldBeOfType<AssertCallbackException>();
@@ -346,12 +343,11 @@ namespace RetryCore.Tests
                 {
                     return Task.Run(() => 1);
                 })
-                .Assert(result =>
+                .RunAsync(result =>
                 {
                     throw new Exception();
                     return Task.FromResult(true);
-                })
-                .RunAsync();
+                });
 
             r.IsSuccess.ShouldBeFalse();
             r.Exception.ShouldBeOfType<AssertCallbackException>();

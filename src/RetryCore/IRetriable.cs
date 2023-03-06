@@ -11,10 +11,18 @@ public interface IRetriable
     public IAsyncRetriable AsAsync();
 
     /// <summary>
-    /// Asynchronous execution try action.
+    /// Execution try action.
     /// </summary>
     /// <returns></returns>
     public RetryResult Run();
+
+    /// <summary>
+    /// Execution try action.
+    /// Retries the task until the specified condition return true.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <returns></returns>
+    public RetryResult Run(Func<RetryResult, bool> condition);
 
     /// <summary>
     /// Configures the action to take after each time the try action fails and before the next try. 
@@ -68,14 +76,14 @@ public interface IRetriable
     /// <returns></returns>
     public IRetriable OnFailure(Action<RetryResult, int> failureAction);
 
-    /// <summary>
-    ///   Retries the task until the specified condition return true, 
-    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    ///   Then returns the value returned by the task.
-    /// </summary>
-    /// <param name = "condition">The assert condition.</param>
-    /// <returns></returns>
-    public IRetriable Assert(Func<RetryResult, bool> condition);
+    ///// <summary>
+    /////   Retries the task until the specified condition return true, 
+    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    /////   Then returns the value returned by the task.
+    ///// </summary>
+    ///// <param name = "condition">The assert condition.</param>
+    ///// <returns></returns>
+    //public IRetriable Assert(Func<RetryResult, bool> condition);
 }
 
 public interface IRetriable<T>
@@ -87,10 +95,18 @@ public interface IRetriable<T>
     public IAsyncRetriable<T> AsAsync();
 
     /// <summary>
-    /// Asynchronous execution try action.
+    /// Execution try action.
     /// </summary>
     /// <returns></returns>
     public RetryResult<T> Run();
+
+    /// <summary>
+    /// Execution try action.
+    /// Retries the task until the specified condition return true.
+    /// </summary>
+    /// <param name = "condition">The assert condition.</param>
+    /// <returns></returns>
+    public RetryResult<T> Run(Func<RetryResult<T>, bool> condition);
 
     /// <summary>
     /// Configures the action to take after each time the try action fails and before the next try. 
@@ -144,12 +160,12 @@ public interface IRetriable<T>
     /// <returns></returns>
     public IRetriable<T> OnFailure(Action<RetryResult<T>, int> failureAction);
 
-    /// <summary>
-    ///   Retries the task until the specified condition return true, 
-    ///   or the max try time/count is exceeded, or an exception is thrown druing task execution.
-    ///   Then returns the value returned by the task.
-    /// </summary>
-    /// <param name = "condition">The assert condition.</param>
-    /// <returns></returns>
-    public IRetriable<T> Assert(Func<RetryResult<T>, bool> condition);
+    ///// <summary>
+    /////   Retries the task until the specified condition return true, 
+    /////   or the max try time/count is exceeded, or an exception is thrown druing task execution.
+    /////   Then returns the value returned by the task.
+    ///// </summary>
+    ///// <param name = "condition">The assert condition.</param>
+    ///// <returns></returns>
+    //public IRetriable<T> Assert(Func<RetryResult<T>, bool> condition);
 }

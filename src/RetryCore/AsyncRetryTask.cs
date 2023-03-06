@@ -31,6 +31,21 @@ internal class AsyncRetryTask : IAsyncRetriable
     }
 
     /// <inheritdoc />
+    public async Task<RetryResult> RunAsync(Func<RetryResult, bool> condition,
+        CancellationToken cancellationToken = default,
+        bool continueOnCapturedContext = false)
+    {
+        return await _retryTask.RunAsync(condition, cancellationToken, continueOnCapturedContext);
+    }
+
+    /// <inheritdoc />
+    public async Task<RetryResult> RunAsync(Func<RetryResult, Task<bool>> condition,
+        CancellationToken cancellationToken = default, bool continueOnCapturedContext = false)
+    {
+        return await _retryTask.RunAsync(condition, cancellationToken, continueOnCapturedContext);
+    }
+
+    /// <inheritdoc />
     public IAsyncRetriable OnRetry(Action<RetryResult> retryAction)
     {
         _retryTask = _retryTask.OnRetry(retryAction);
@@ -126,21 +141,21 @@ internal class AsyncRetryTask : IAsyncRetriable
         return this;
     }
 
-    /// <inheritdoc />
-    public IAsyncRetriable Assert(Func<RetryResult, bool> condition)
-    {
-        _retryTask = _retryTask.Assert(condition);
+    ///// <inheritdoc />
+    //public IAsyncRetriable Assert(Func<RetryResult, bool> condition)
+    //{
+    //    _retryTask = _retryTask.Assert(condition);
 
-        return this;
-    }
+    //    return this;
+    //}
 
-    /// <inheritdoc />
-    public IAsyncRetriable Assert(Func<RetryResult, Task<bool>> condition)
-    {
-        _retryTask = _retryTask.Assert(condition);
+    ///// <inheritdoc />
+    //public IAsyncRetriable Assert(Func<RetryResult, Task<bool>> condition)
+    //{
+    //    _retryTask = _retryTask.Assert(condition);
 
-        return this;
-    }
+    //    return this;
+    //}
 }
 
 /// <summary>
@@ -182,11 +197,29 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
     public async Task<RetryResult<T>> RunAsync(CancellationToken cancellationToken = default,
         bool continueOnCapturedContext = false)
     {
-        //start
         _cancellationToken = cancellationToken;
-        return await TryImplAsync().ConfigureAwait(continueOnCapturedContext);
 
-        //end
+        return await TryImplAsync().ConfigureAwait(continueOnCapturedContext);
+    }
+
+    /// <inheritdoc />
+    public Task<RetryResult<T>> RunAsync(Func<RetryResult<T>, bool> condition,
+        CancellationToken cancellationToken = default, bool continueOnCapturedContext = false)
+    {
+        _condition = condition;
+        _conditionTask = null;
+
+        return RunAsync(cancellationToken, continueOnCapturedContext);
+    }
+
+    /// <inheritdoc />
+    public Task<RetryResult<T>> RunAsync(Func<RetryResult<T>, Task<bool>> condition,
+        CancellationToken cancellationToken = default, bool continueOnCapturedContext = false)
+    {
+        _condition = null;
+        _conditionTask = condition;
+
+        return RunAsync(cancellationToken, continueOnCapturedContext);
     }
 
     /// <inheritdoc />
@@ -273,23 +306,23 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
         return this;
     }
 
-    /// <inheritdoc />
-    public IAsyncRetriable<T> Assert(Func<RetryResult<T>, bool> condition)
-    {
-        _condition = condition;
-        _conditionTask = null;
+    ///// <inheritdoc />
+    //public IAsyncRetriable<T> Assert(Func<RetryResult<T>, bool> condition)
+    //{
+    //    _condition = condition;
+    //    _conditionTask = null;
 
-        return this;
-    }
+    //    return this;
+    //}
 
-    /// <inheritdoc />
-    public IAsyncRetriable<T> Assert(Func<RetryResult<T>, Task<bool>> condition)
-    {
-        _conditionTask = condition;
-        _condition = null;
+    ///// <inheritdoc />
+    //public IAsyncRetriable<T> Assert(Func<RetryResult<T>, Task<bool>> condition)
+    //{
+    //    _conditionTask = condition;
+    //    _condition = null;
 
-        return this;
-    }
+    //    return this;
+    //}
 
     private async Task<RetryResult<T>> TryImplAsync()
     {
@@ -307,6 +340,7 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
 
             if (triedCount > 1)
             {
+                //on retry
                 try
                 {
                     await Retry(result, triedCount);
@@ -359,7 +393,7 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
                 break;
             }
 
-            //onsuccess
+            //on success
             try
             {
                 await Success(result, triedCount);
@@ -371,9 +405,9 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
             }
 
             return result;
-        } while (ShouldContinue(result, sw.Elapsed, triedCount)); //onretry
+        } while (ShouldContinue(result, sw.Elapsed, triedCount));
 
-        //failure
+        //on failure
         try
         {
             await Failure(result, triedCount);
