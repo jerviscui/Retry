@@ -343,11 +343,12 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
                 //on retry
                 try
                 {
-                    await Retry(result, triedCount);
+                    await Retry(result, triedCount - 1);
 
-                    if (_retryOptions.TryInterval.Ticks > 0)
+                    var delay = _retryOptions.RetryInterval.GetInterval();
+                    if (delay.Ticks > 0)
                     {
-                        await Task.Delay(_retryOptions.TryInterval, _cancellationToken);
+                        await Task.Delay(delay, _cancellationToken);
                     }
                 }
                 catch (TaskCanceledException ex)
@@ -475,9 +476,9 @@ internal class AsyncRetryTask<T> : IAsyncRetriable<T>
         return InvokeActions(_successActions, result, triedCount);
     }
 
-    private Task Retry(RetryResult<T> result, int triedCount)
+    private Task Retry(RetryResult<T> result, int retryCount)
     {
-        return InvokeActions(_retryActions, result, triedCount);
+        return InvokeActions(_retryActions, result, retryCount);
     }
 
     private Task Failure(RetryResult<T> result, int triedCount)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Retry;
 
@@ -7,7 +7,8 @@ public class RetryOptions
     /// <summary>
     /// The time interval to wait between each retry attempt.
     /// </summary>
-    public TimeSpan TryInterval { get; set; } = TimeSpan.FromMilliseconds(100);
+    public IRetryIntervalStrategy RetryInterval { get; set; } =
+        new ConstantRetryInterval(TimeSpan.FromMilliseconds(100));
 
     /// <summary>
     /// The max try time limit.

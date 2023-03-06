@@ -289,7 +289,7 @@ namespace RetryCore.Tests
                     return stop;
                 });
 
-            count.ShouldBe(2);
+            count.ShouldBe(1);
             r.IsSuccess.ShouldBeTrue();
         }
 
@@ -313,7 +313,7 @@ namespace RetryCore.Tests
                     return stop;
                 });
 
-            count.ShouldBe(2);
+            count.ShouldBe(1);
             r.IsSuccess.ShouldBeTrue();
         }
 

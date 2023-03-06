@@ -13,13 +13,13 @@ namespace Retry;
 /// </summary>
 internal class RetryTask : IRetriable
 {
-    private IRetriable<int> _retryTask;
-
     private readonly Action _action;
+
+    private readonly Type[] _retryExceptions;
 
     private readonly RetryOptions _retryOptions;
 
-    private readonly Type[] _retryExceptions;
+    private IRetriable<int> _retryTask;
 
     public RetryTask(Action action, RetryOptions retryOptions, Type[] retryExceptions)
     {
@@ -115,11 +115,19 @@ internal class RetryTask : IRetriable
 /// <typeparam name="T">The type of result returned by the retried delegate.</typeparam>
 internal class RetryTask<T> : IRetriable<T>
 {
-    private readonly Func<T> _taskToTry;
+    private readonly List<Action<RetryResult<T>, int>> _failureActions;
+
+    private readonly List<Action<RetryResult<T>, int>> _retryActions;
 
     private readonly Type[] _retryExceptions;
 
     private readonly RetryOptions _retryOptions;
+
+    private readonly List<Action<RetryResult<T>, int>> _successActions;
+
+    private readonly Func<T> _taskToTry;
+
+    private Func<RetryResult<T>, bool>? _condition;
 
     public RetryTask(Func<T> function, RetryOptions retryOptions, Type[] retryExceptions)
     {
@@ -131,14 +139,6 @@ internal class RetryTask<T> : IRetriable<T>
         _successActions = new List<Action<RetryResult<T>, int>>();
         _failureActions = new List<Action<RetryResult<T>, int>>();
     }
-
-    private readonly List<Action<RetryResult<T>, int>> _retryActions;
-
-    private readonly List<Action<RetryResult<T>, int>> _successActions;
-
-    private readonly List<Action<RetryResult<T>, int>> _failureActions;
-
-    private Func<RetryResult<T>, bool>? _condition;
 
     /// <inheritdoc />
     public IAsyncRetriable<T> AsAsync()
@@ -216,6 +216,7 @@ internal class RetryTask<T> : IRetriable<T>
         //    MaxTryTime, MaxTryCount);
         int triedCount = 0;
         var sw = Stopwatch.StartNew();
+        ManualResetEventSlim? resetEvent = null;
 
         // Start the try loop.
         var result = new RetryResult<T>();
@@ -228,11 +229,13 @@ internal class RetryTask<T> : IRetriable<T>
             {
                 try
                 {
-                    Retry(result, triedCount);
+                    Retry(result, triedCount - 1);
 
-                    if (_retryOptions.TryInterval.Ticks > 0)
+                    var delay = _retryOptions.RetryInterval.GetInterval();
+                    if (delay.Ticks > 0)
                     {
-                        Thread.Sleep(_retryOptions.TryInterval);
+                        resetEvent ??= new ManualResetEventSlim();
+                        resetEvent.Wait(delay);
                     }
                 }
                 catch (TaskCanceledException ex)
@@ -289,7 +292,7 @@ internal class RetryTask<T> : IRetriable<T>
                 break;
             }
 
-            return result;
+            goto Exit;
         } while (ShouldContinue(result, sw.Elapsed, triedCount)); //onretry
 
         //failure
@@ -302,6 +305,8 @@ internal class RetryTask<T> : IRetriable<T>
             result.Exception = new FailureCallbackException(ex);
         }
 
+        Exit:
+        resetEvent?.Dispose();
         return result;
     }
 
@@ -350,9 +355,9 @@ internal class RetryTask<T> : IRetriable<T>
         InvokeActions(_successActions, result, triedCount);
     }
 
-    private void Retry(RetryResult<T> result, int triedCount)
+    private void Retry(RetryResult<T> result, int retryCount)
     {
-        InvokeActions(_retryActions, result, triedCount);
+        InvokeActions(_retryActions, result, retryCount);
     }
 
     private void Failure(RetryResult<T> result, int triedCount)

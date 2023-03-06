@@ -80,7 +80,7 @@ public class RetryBuilder
         {
             MaxTryCount = DefaultOptions.MaxTryCount,
             MaxTryTime = DefaultOptions.MaxTryTime,
-            TryInterval = DefaultOptions.TryInterval
+            RetryInterval = DefaultOptions.RetryInterval
         };
         if (_configureAction is not null)
         {
@@ -144,6 +144,17 @@ public class RetryBuilder
     public RetryBuilder RetryAllExceptions()
     {
         _retryExceptions.Clear();
+        return this;
+    }
+
+    /// <summary>
+    /// Configures the action to take after each time the try action fails and before the next try. 
+    /// The result of the failed try action will be passed as parameter to the action.
+    /// </summary>
+    /// <param name="retryAction">The action to take on retry.</param>
+    /// <returns></returns>
+    public RetryBuilder OnRetry(Action<RetryResult> retryAction)
+    {
         return this;
     }
 }
