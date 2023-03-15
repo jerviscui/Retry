@@ -8,7 +8,7 @@
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
 		<LangVersion>latest</LangVersion>
 
-    <Version>0.3.1</Version>
+    <Version>0.3.2</Version>
     <PackageId>$(AssemblyName)</PackageId>
     <Description>A library for retrying operations.</Description>
     <Authors>jerviscui</Authors>

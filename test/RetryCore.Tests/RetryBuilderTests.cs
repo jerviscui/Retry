@@ -78,11 +78,8 @@ namespace RetryCore.Tests
         [Fact]
         public void TryFunction_OverMaxTryTimeException_Test()
         {
-            var r = RetryBuilder.Default.ConfigureOptions(options =>
-            {
-                options.MaxTryCount = int.MaxValue;
-                options.MaxTryTime = TimeSpan.FromSeconds(1);
-            }).Build(() =>
+            var options = new RetryOptions { MaxTryCount = int.MaxValue, MaxTryTime = TimeSpan.FromSeconds(1) };
+            var r = RetryBuilder.Default.ConfigureOptions(options).Build(() =>
             {
                 throw new Exception();
                 return 1;

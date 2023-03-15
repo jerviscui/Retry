@@ -109,6 +109,23 @@ public class RetryBuilder
     }
 
     /// <summary>
+    /// Configures the RetryOptions.
+    /// </summary>
+    /// <param name="option">The retry option.</param>
+    /// <returns></returns>
+    public RetryBuilder ConfigureOptions(RetryOptions option)
+    {
+        _configureAction = options =>
+        {
+            options.MaxTryCount = option.MaxTryCount;
+            options.MaxTryTime = option.MaxTryTime;
+            options.RetryInterval = option.RetryInterval;
+        };
+
+        return this;
+    }
+
+    /// <summary>
     /// Retry only on exceptions of the type.
     /// </summary>
     /// <typeparam name="TException">The type of the exception.</typeparam>
