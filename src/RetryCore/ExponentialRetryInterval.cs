@@ -12,7 +12,7 @@ public class ExponentialRetryInterval : IRetryIntervalStrategy
 
     private int _count;
 
-    private TimeSpan _first;
+    private TimeSpan _initial;
 
     private TimeSpan _maxDelay;
 
@@ -21,13 +21,13 @@ public class ExponentialRetryInterval : IRetryIntervalStrategy
     /// <summary>
     /// Initializes a new instance of the <see cref="ExponentialRetryInterval"/> class.
     /// </summary>
-    /// <param name="first">The first.</param>
+    /// <param name="initial">The initial.</param>
     /// <param name="max">The maximum.</param>
-    public ExponentialRetryInterval(TimeSpan first, TimeSpan max)
+    public ExponentialRetryInterval(TimeSpan initial, TimeSpan? max = null)
     {
-        _first = first;
-        _pre = first;
-        _maxDelay = max;
+        _initial = initial;
+        _pre = initial;
+        _maxDelay = max ?? TimeSpan.MaxValue;
 
         _random = new Random();
     }
@@ -43,7 +43,7 @@ public class ExponentialRetryInterval : IRetryIntervalStrategy
         }
 
         var delta = (Math.Pow(2, _count) - 1.0) * (1.0 + (_random.NextDouble() * (1.1 - 1.0)));
-        var delay = Math.Min(_first.TotalMilliseconds * delta, _maxDelay.TotalMilliseconds);
+        var delay = Math.Min(_initial.TotalMilliseconds * delta, _maxDelay.TotalMilliseconds);
 
         _pre = TimeSpan.FromMilliseconds(delay);
 
