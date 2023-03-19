@@ -1,6 +1,6 @@
 # Retry
 
-A library for retrying operations
+A library for retrying operations.
 
 ## Samples
 
@@ -33,3 +33,6 @@ var builder = RetryBuilder.Default.ConfigureOptions(options =>
 }); 
 ```
 
+## Doc
+
+You can check out the [unit tests](test/RetryCore.Tests/RetryBuilderTests.cs) to see how to use it.
